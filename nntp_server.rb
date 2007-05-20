@@ -54,6 +54,9 @@ class NNTPServer
         @name = socket.peeraddr[2]
         @addr = socket.peeraddr[3]
         
+        @group = nil
+        @article = nil
+        
         @server.log "initialising session"
         
         run
@@ -68,11 +71,70 @@ class NNTPServer
           while line = @socket.gets # read a line at a time
             log_command(line)
             case line
+            when /^(article|body|head|stat)\b\s*(\d*)\s*$/i
+              command = $1
+              article_number = $2
+
+              if @group.nil?
+                send_status "412 no newsgroup has been selected"
+                next
+              end
+              
+              # load @article with the specified article
+              if article_number.empty?
+                if @article.nil?
+                  send_status "420 no current article has been selected"
+                  next
+                end
+              else
+                if @group.articles[article_number.to_i]
+                  @article = @group.articles[article_number.to_i]
+                else
+                  send_status "423 no such article number in this group"
+                  next
+                end
+              end
+              
+              case command.downcase
+              when 'article'
+                send_status "220 #{@article.id} #{@article.message_id} article retrieved - head and body follow"
+                text_response do |t|
+                  t.write @article.headers
+                  t.write
+                  t.write @article.body
+                end
+              when 'body'
+                send_status "222 #{@article.id} #{@article.message_id} article retrieved - body follows"
+                text_response do |t|
+                  t.write @article.body
+                end
+              when 'head'
+                send_status "221 #{@article.id} #{@article.message_id} article retrieved - head follows"
+                text_response do |t|
+                  t.write @article.headers
+                end
+              when 'stat'
+                send_status "223 #{@article.id} #{@article.message_id} article retrieved - request text separately"
+              end
+              
+            when /^group\s+(\S+)/i
+              group_name = $1
+              if @server.groups.include?(group_name)
+                @group = @server.groups[group_name]
+                send_status "211 #{@group.articles.size} #{@group.articles.first.id} #{@group.articles.last.id} #{@group.name} group selected"
+              else
+                send_status "411 no such news group"
+              end
             when /^list\b/i
               send_status "215 list of newsgroups follows"
               text_response do |t|
-                for group in @server.groups
-                  t.write "#{group.name} 1 2 n"
+                @server.groups.each_value do |group|
+                  if group.articles.empty?
+                    # put last_id < first_id to indicate an empty group
+                    t.write "#{group.name} 1 2 n"
+                  else
+                    t.write "#{group.name} #{group.articles.last.id} #{group.articles.first.id} n"
+                  end
                 end
               end
             when /^quit\b/i
@@ -124,7 +186,8 @@ class NNTPServer
       def initialize(session)
         @session = session
       end
-      def write(text)
+      def write(text = nil)
+        text = "\n" if text.nil? or text == ""
         text.each_line do |line|
           # qualify lines beginning with '.' with an escaping '.'
           line.chomp!
