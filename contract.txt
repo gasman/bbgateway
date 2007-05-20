@@ -1,0 +1,24 @@
+Operations we need to perform on the groups collection:
+
+(for RFC977)
+* LIST: listing them all, with first_id and last_id
+* NEWGROUPS: listing all groups created since 'date' (optionally filtered by name prefix)
+* GROUP: returning first_id, last_id and (estimated) count for an individual group
+* LAST/NEXT: need to traverse the list of articles. Probably want to keep an index as well as a pointer to current article, then.
+* NEWNEWS: listing message IDs of articles created since 'date', filtered by stupid overengineered wildcard scheme on name
+
+* ARTICLE/BODY/HEAD/STAT: fetching by either in-group ID or message-id
+and returning body / headers including the required ones...
+required headers are:
+	Relay-Version, - obsolete
+	Posting-Version, - obsolete
+	From, - get Article model to provide this
+	Date, - get Article model to provide this as a Time, BUT also need to search on this
+	Newsgroups, - need to consider cross-posts
+	Subject, - get Article model to provide this
+	Message-ID, - used in protocol
+	Path - fake this, end it with !not-for-mail
+
+ignore for now:
+* IHAVE
+* POST
