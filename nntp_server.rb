@@ -4,9 +4,12 @@ class ClientQuitError < RuntimeError; end
 
 class NNTPServer
 
+  attr_reader :source
+
   def initialize(opts)
     @port = opts[:port] || 119
     @host = opts[:host]
+    @source = opts[:source]
   end
   
   def start
@@ -37,10 +40,6 @@ class NNTPServer
     puts "*** #{message}"
   end
   
-  def groups
-    {}
-  end
-    
   protected
   
     class NNTPSession
@@ -56,6 +55,7 @@ class NNTPServer
         
         @group = nil
         @article = nil
+        @placement_id = nil
         
         @server.log "initialising session"
         
@@ -87,8 +87,9 @@ class NNTPServer
                   next
                 end
               else
-                if @group.articles[article_number.to_i]
-                  @article = @group.articles[article_number.to_i]
+                if (article = @group.article(article_number.to_i))
+                  @placement_id = article_number.to_i
+                  @article = article
                 else
                   send_status "423 no such article number in this group"
                   next
@@ -97,7 +98,7 @@ class NNTPServer
               
               case command.downcase
               when 'article'
-                send_status "220 #{@article.id} #{@article.message_id} article retrieved - head and body follow"
+                send_status "220 #{@placement_id} #{@article.message_id} article retrieved - head and body follow"
                 text_response do |t|
                   t.write @article.headers
                   t.write
@@ -119,21 +120,21 @@ class NNTPServer
               
             when /^group\s+(\S+)/i
               group_name = $1
-              if @server.groups.include?(group_name)
-                @group = @server.groups[group_name]
-                send_status "211 #{@group.articles.size} #{@group.articles.first.id} #{@group.articles.last.id} #{@group.name} group selected"
+              if (group = @server.source.group(group_name))
+                @group = group
+                send_status "211 #{@group.article_count} #{@group.first_id} #{@group.last_id} #{@group.name} group selected"
               else
                 send_status "411 no such news group"
               end
             when /^list\b/i
               send_status "215 list of newsgroups follows"
               text_response do |t|
-                @server.groups.each_value do |group|
-                  if group.articles.empty?
+                @server.source.groups.each do |group|
+                  if group.first_id.nil?
                     # put last_id < first_id to indicate an empty group
                     t.write "#{group.name} 1 2 n"
                   else
-                    t.write "#{group.name} #{group.articles.last.id} #{group.articles.first.id} n"
+                    t.write "#{group.name} #{group.last_id} #{group.first_id} n"
                   end
                 end
               end
