@@ -1,15 +1,13 @@
-require 'socket'
+require "socket"
+require "models"
 
 class ClientQuitError < RuntimeError; end
 
 class NNTPServer
 
-  attr_reader :source
-
   def initialize(opts)
     @port = opts[:port] || 119
     @host = opts[:host]
-    @source = opts[:source]
   end
   
   def start
@@ -100,7 +98,7 @@ class NNTPServer
               when 'article'
                 send_status "220 #{@placement_id} #{@article.message_id} article retrieved - head and body follow"
                 text_response do |t|
-                  t.write @article.headers
+                  t.write @article.header_text
                   t.write
                   t.write @article.body
                 end
@@ -112,7 +110,7 @@ class NNTPServer
               when 'head'
                 send_status "221 #{@article.id} #{@article.message_id} article retrieved - head follows"
                 text_response do |t|
-                  t.write @article.headers
+                  t.write @article.header_text
                 end
               when 'stat'
                 send_status "223 #{@article.id} #{@article.message_id} article retrieved - request text separately"
@@ -120,7 +118,7 @@ class NNTPServer
               
             when /^group\s+(\S+)/i
               group_name = $1
-              if (group = @server.source.group(group_name))
+              if (group = Newsgroup.find_by_name(group_name))
                 @group = group
                 send_status "211 #{@group.article_count} #{@group.first_id} #{@group.last_id} #{@group.name} group selected"
               else
@@ -129,12 +127,41 @@ class NNTPServer
             when /^list\b/i
               send_status "215 list of newsgroups follows"
               text_response do |t|
-                @server.source.groups.each do |group|
+                Newsgroup.find(:all, :order => 'name').each do |group|
                   if group.first_id.nil?
                     # put last_id < first_id to indicate an empty group
                     t.write "#{group.name} 1 2 n"
                   else
                     t.write "#{group.name} #{group.last_id} #{group.first_id} n"
+                  end
+                end
+              end
+            when /^over\s+([\d\-]+)/i, /^xover\s+([\d\-]+)/i
+              range = $1
+              if @group.nil?
+                send_status "412 No newsgroup selected"
+                next
+              end
+              if range =~ /^(\d+)$/
+                article_id = $1.to_i
+                overview = @group.overview(article_id, article_id)
+              elsif range =~ /^(\d+)\-$/
+                overview = @group.overview($1.to_i)
+              elsif range =~ /^(\d+)\-(\d+)$/
+                overview = @group.overview($1.to_i, $2.to_i)
+              else
+                send_status "500 command not recognized"
+                next
+              end
+              if overview.length == 0
+                send_status "423 No articles in that range"
+              else
+                send_status "224 Overview information follows (multi-line)"
+                text_response do |t|
+                  for article in overview
+                    t.write [article.placement_id, article.h_subject, article.h_from, article.h_date, article.h_message_id, article.h_references, article.byte_count, article.line_count, "Xref: #{article.h_xref}"].map {|h|
+                      h.nil? ? '' : h.gsub(/\n\r/, '').gsub(/\t/, ' ')
+                    }.join("\t")
                   end
                 end
               end

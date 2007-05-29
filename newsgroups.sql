@@ -8,14 +8,14 @@ CREATE TABLE newsgroups (
 
 CREATE TABLE articles (
   id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
-  message_id VARCHAR(255) NOT NULL,
-  author VARCHAR(255) NOT NULL,
-  created_at DATETIME,
-  subject VARCHAR(2048),
-  body LONGTEXT,
+  -- message_id VARCHAR(255) NOT NULL,
+  -- author VARCHAR(255) NOT NULL,
+  -- created_at DATETIME,
+  -- subject VARCHAR(2048),
+  body LONGTEXT -- ,
   
-  INDEX (message_id),
-  INDEX (created_at)
+  -- INDEX (message_id),
+  -- INDEX (created_at)
 );
 
 CREATE TABLE article_placements (
@@ -27,3 +27,12 @@ CREATE TABLE article_placements (
   INDEX (article_id),
   INDEX (newsgroup_id)
 );
+
+CREATE TABLE headers (
+  id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  article_id INTEGER NOT NULL REFERENCES articles(id),
+  name VARCHAR(255) NOT NULL,
+  value VARCHAR(2048) NOT NULL,
+  
+  INDEX (article_id)
+)
