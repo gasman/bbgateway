@@ -80,5 +80,20 @@ module WosScraper
     
     { :page_number => page_number, :posts => posts }
   end
+  
+  def WosScraper.thread_map(post_id)
+    posts = []
+    page = Hpricot(open("http://www.worldofspectrum.org/forums/showthread.php?mode=hybrid&p=#{post_id}"))
+    writelink_list = (page / "script").select {|e| e.inner_html =~ /writeLink/}.to_s
+    writelink_list.each do |line|
+      next unless line =~ /^\s*writeLink\((\d+), \d+, \d+, \d+, \"([^\"]*)\", \"(?:\\.|[^\\\"])*\", \"[^\"]*\", \"([^\"]+)\", \d+\);/
+      post_id = $1.to_i
+      indent_code = $2
+      indent = indent_code.gsub(/[A-Z]/, '1').split(/,/).inject(0){|sum, i| sum + i.to_i}
+      timestamp = $3
+      posts << {:id => post_id, :indent => indent, :timestamp => timestamp}
+    end
+    posts
+  end
 
 end

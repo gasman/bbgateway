@@ -28,7 +28,7 @@ CREATE TABLE headers (
   id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
   article_id INTEGER NOT NULL REFERENCES articles(id),
   name VARCHAR(255) NOT NULL,
-  value VARCHAR(2048) NOT NULL,
+  value TEXT NOT NULL,
   
   INDEX (article_id)
-)
+);
