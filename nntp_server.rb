@@ -93,29 +93,18 @@ class NNTPServer
                   next
                 end
               end
+              send_article(command, @article, @placement_id)
               
-              case command.downcase
-              when 'article'
-                send_status "220 #{@placement_id} #{@article.message_id} article retrieved - head and body follow"
-                text_response do |t|
-                  t.write @article.header_text
-                  t.write
-                  t.write @article.body
-                end
-              when 'body'
-                send_status "222 #{@article.id} #{@article.message_id} article retrieved - body follows"
-                text_response do |t|
-                  t.write @article.body
-                end
-              when 'head'
-                send_status "221 #{@article.id} #{@article.message_id} article retrieved - head follows"
-                text_response do |t|
-                  t.write @article.header_text
-                end
-              when 'stat'
-                send_status "223 #{@article.id} #{@article.message_id} article retrieved - request text separately"
+            when /^(article|body|head|stat)\b\s*(\<[^\>]+\>)\s*$/i
+              command = $1
+              message_id = $2
+              h = Header.find_by_name_and_value('Message-Id', message_id)
+              if h.nil?
+                send_status "430 no such article found"
+                next
               end
-              
+              send_article(command, h.article, 0)
+
             when /^group\s+(\S+)/i
               group_name = $1
               if (group = Newsgroup.find_by_name(group_name))
@@ -186,6 +175,30 @@ class NNTPServer
       def send_status(str)
         @socket.write(str.chomp + "\r\n")
         log_response(str)
+      end
+      
+      def send_article(command, article, placement)
+        case command.downcase
+        when 'article'
+          send_status "220 #{placement} #{article.message_id} article retrieved - head and body follow"
+          text_response do |t|
+            t.write article.header_text
+            t.write
+            t.write article.body
+          end
+        when 'body'
+          send_status "222 #{placement} #{article.message_id} article retrieved - body follows"
+          text_response do |t|
+            t.write article.body
+          end
+        when 'head'
+          send_status "221 #{placement} #{article.message_id} article retrieved - head follows"
+          text_response do |t|
+            t.write article.header_text
+          end
+        when 'stat'
+          send_status "223 #{placement} #{article.message_id} article retrieved - request text separately"
+        end
       end
       
       def log_command(str)
