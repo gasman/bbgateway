@@ -95,7 +95,7 @@ class NNTPServer
               end
               send_article(command, @article, @placement_id)
               
-            when /^(article|body|head|stat)\b\s*(\<[^\>]+\>)\s*$/i
+            when /^(article|body|head|stat)\s*(\<[^\>]+\>)\s*$/i
               command = $1
               message_id = $2
               h = Header.find_by_name_and_value('Message-Id', message_id)
@@ -123,12 +123,15 @@ class NNTPServer
                 t.write "  group [newsgroup]"
                 t.write "  head [MessageID|Number]"
                 t.write "  help"
+                t.write "  ihave"
                 t.write "  list"
                 t.write "  over [range]"
                 t.write "  quit"
                 t.write "  stat [MessageID|Number]"
                 t.write "  xover [range]"
               end
+            when /^ihave\s*(\<[^\>]+\>)\s*$/i
+              send_status "435 article not wanted - do not send it"
             when /^list\b/i
               send_status "215 list of newsgroups follows"
               text_response do |t|
