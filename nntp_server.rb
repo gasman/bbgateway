@@ -125,6 +125,7 @@ class NNTPServer
                 t.write "  head [MessageID|Number]"
                 t.write "  help"
                 t.write "  ihave"
+                t.write "  last"
                 t.write "  list"
                 t.write "  over [range]"
                 t.write "  quit"
