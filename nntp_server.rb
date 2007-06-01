@@ -113,6 +113,7 @@ class NNTPServer
               else
                 send_status "411 no such news group"
               end
+
             when /^help\b/i
               send_status "100 help text follows"
               text_response do |t|
@@ -130,8 +131,28 @@ class NNTPServer
                 t.write "  stat [MessageID|Number]"
                 t.write "  xover [range]"
               end
+
             when /^ihave\s*(\<[^\>]+\>)\s*$/i
               send_status "435 article not wanted - do not send it"
+
+            when /^last\b/i
+              if @group.nil?
+                send_status "412 no newsgroup selected"
+                next
+              end
+              if @placement_id.nil?
+                send_status "420 no current article has been selected"
+                next
+              end
+              new_placement_id = @group.id_before(@placement_id)
+              if new_placement_id.nil?
+                send_status "422 no previous article in this group"
+              else
+                @placement_id = new_placement_id
+                @article = @group.article(@placement_id)
+                send_status "223 #{@placement_id} #{@article.message_id} article retrieved - request text separately"
+              end
+              
             when /^list\b/i
               send_status "215 list of newsgroups follows"
               text_response do |t|
