@@ -113,6 +113,22 @@ class NNTPServer
               else
                 send_status "411 no such news group"
               end
+            when /^help\b/i
+              send_status "100 help text follows"
+              text_response do |t|
+                t.write "You are in a maze of twisty newsgroups, all alike."
+                t.write "Commands recognised:"
+                t.write "  article [MessageID|Number]"
+                t.write "  body [MessageID|Number]"
+                t.write "  group [newsgroup]"
+                t.write "  head [MessageID|Number]"
+                t.write "  help"
+                t.write "  list"
+                t.write "  over [range]"
+                t.write "  quit"
+                t.write "  stat [MessageID|Number]"
+                t.write "  xover [range]"
+              end
             when /^list\b/i
               send_status "215 list of newsgroups follows"
               text_response do |t|
@@ -232,7 +248,7 @@ class NNTPServer
         text.each_line do |line|
           # qualify lines beginning with '.' with an escaping '.'
           line.chomp!
-          @session.log_response line
+          # @session.log_response line
           @session.socket.write((line =~ /^\./ ? ".#{line}" : line) + "\r\n")
         end
       end
