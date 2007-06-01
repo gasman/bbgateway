@@ -98,8 +98,8 @@ module WosScraper
       next unless line =~ /^\s*writeLink\((\d+), \d+, \d+, \d+, \"([^\"]*)\", \"(?:\\.|[^\\\"])*\", \"[^\"]*\", \"([^\"]+)\", \d+\);/
       post_id = $1.to_i
       indent_code = $2
-      indent = indent_code.gsub(/[A-Z]/, '1').split(/,/).inject(0){|sum, i| sum + i.to_i}
       timestamp = $3
+      indent = indent_code.gsub(/[A-Z]/, '1').split(/,/).inject(0){|sum, i| sum + i.to_i}
       seconds_ago = (reported_time - time_string_to_seconds(timestamp)) % 86400
       time_utc = (Time.now - seconds_ago).getgm
       posts << {:id => post_id, :indent => indent, :timestamp => time_utc}
