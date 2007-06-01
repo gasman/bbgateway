@@ -127,6 +127,7 @@ class NNTPServer
                 t.write "  ihave"
                 t.write "  last"
                 t.write "  list"
+                t.write "  newgroups [yy]yymmdd hhmmss [\"GMT\"]"
                 t.write "  over [range]"
                 t.write "  quit"
                 t.write "  stat [MessageID|Number]"
@@ -164,6 +165,40 @@ class NNTPServer
                   else
                     t.write "#{group.name} #{group.last_id} #{group.first_id} n"
                   end
+                end
+              end
+            when /^newgroups\s+(\d+)\s+(\d\d)(\d\d)(\d\d)(\s+gmt)?/i
+              date_part = $1
+              hour = $2.to_i
+              minute = $3.to_i
+              second = $4.to_i
+              gmt = $5
+              if date_part =~ /^(\d\d\d\d)(\d\d)(\d\d)/
+                year = $1.to_i
+                month = $2.to_i
+                day = $3.to_i
+              elsif date_part =~ /^(\d\d)(\d\d)(\d\d)/
+                year = $1.to_i
+                month = $2.to_i
+                day = $3.to_i
+                current_year = Time.now.year
+                century = current_year - (current_year % 100)
+                year += (year <= current_year % 100 ? century : century - 100)
+              else
+                send_status "501 command not recognised"
+                next
+              end
+
+              if gmt
+                date = Time.gm(year, month, day, hour, minute, second)
+              else
+                date = Time.local(year, month, day, hour, minute, second)
+              end
+              send_status "231 List of new newsgroups follows (multi-line)"
+              new_groups = Newsgroup.find(:all, :conditions => ['created_at > ?', date])
+              text_response do |t|
+                for group in new_groups
+                  t.write group.name
                 end
               end
             when /^over\s+([\d\-]+)/i, /^xover\s+([\d\-]+)/i
