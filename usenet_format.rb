@@ -1,8 +1,22 @@
 module UsenetFormat
 
   SMILEYS = {
+    'images/smilies/icon_biggrin.gif' => ':-D',
+    'images/smilies/icon_confused.gif' => '?:-/',
+    'images/smilies/icon_cool.gif' => '8)',
+    'images/smilies/icon_cry.gif' => ":'-(",
+    'images/smilies/icon_eek.gif' => ':-o',
+    'images/smilies/icon_evil.gif' => '>:-[',
+    'images/smilies/icon_frown.gif' => ':(',
+    'images/smilies/icon_lol.gif' => ':-D',
+    'images/smilies/icon_mad.gif' => '>:-(',
+    'images/smilies/icon_razz.gif' => ':P',
+    'images/smilies/icon_redface.gif' => ':-o',
+    'images/smilies/icon_rolleyes.gif' => ':rolleyes:',
     'images/smilies/icon_smile.gif' => ':)',
-    'images/smilies/icon_biggrin.gif' => ':-D'
+    'images/smilies/icon_wink.gif' => ';)',
+    'images/smilies/confused.gif' => '?:-/',
+    'images/smilies/rolleyes.gif' => ':rolleyes:'
   }
 
   # adapted from http://macromates.com/blog/2006/wrapping-text-with-regular-expressions/
@@ -70,6 +84,10 @@ module UsenetFormat
           else
             text += clean_html_traverse(node, quote_level, links)
           end
+        elsif node.name == 'pre'
+          text += render_inlines(inlines, quote_level, links)
+          inlines = []
+          text += node.inner_text
         else
           inlines << node
         end
