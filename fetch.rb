@@ -54,6 +54,7 @@ for thread in fresh_threads
     for post in post_page[:posts]
       if (!Article.find_by_source_post(post[:id])) and posted_today?(post[:crap_timestamp])
         post[:forum] = thread[:forum]
+        post[:subject] = (page_number == 1 && post == post_page[:posts].first ? '' : 'Re: ') + thread[:title]
         new_posts[post[:id]] = post
       else
         seen_all_new_posts = true
@@ -77,8 +78,23 @@ until new_posts.empty?
     indent_map[annotation[:indent]] = annotation
     next unless (post = new_posts[annotation[:id]])
     post[:references] = indent_map[(0...annotation[:indent])].map{|a| a[:id]}
-    puts "post #{post[:id]} references: #{post[:references].join(' ')}"
+    post[:date] = annotation[:timestamp]
+    puts "post #{post[:id]} posted at #{annotation[:timestamp]}, references: #{post[:references].join(' ')}"
     annotated_posts << new_posts.delete(post[:id])
   end
   puts
 end
+
+puts "Adding to newsfeed..."
+for post in annotated_posts
+  article = Article.create_from_posting({
+    "From" => "#{post[:author].gsub(/[\<\>\n\r]/, '')} <#{post[:author].gsub(/[^\w\_\-]/, '-')}@wos.invalid}>",
+    "Date" => post[:date],
+    "Newsgroups" => post[:forum][:name],
+    "Subject" => post[:subject],
+    "Message-Id" => "<wos-#{post[:id]}@bbgateway.bluecanary.mine.nu>",
+    "References" => post[:references].map{|id| "<wos-#{id}@bbgateway.bluecanary.mine.nu>"}.join(" ")
+  }, post[:body].to_s + post[:sig].to_s)
+  article.update_attribute(:source_post, post[:id])
+end
+puts "done."

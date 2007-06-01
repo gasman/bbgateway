@@ -111,6 +111,7 @@ class Article < ActiveRecord::Base
     end
 
     article.save!
+    article
   end
   
   def message_id

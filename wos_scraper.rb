@@ -7,6 +7,14 @@ module WosScraper
   def WosScraper.clean_string(str)
     str.downcase.gsub(/\W+/, '-')
   end
+  
+  def WosScraper.time_string_to_seconds(str)
+    str =~ /(\d+):(\d+) (AM|PM)/
+    h = $1.to_i
+    m = $2.to_i
+    meridian = $3
+    (h % 12) * 3600 + m * 60 + (meridian == 'AM' ? 0 : 43200)
+  end
 
   # get list of newsgroups and last post from front page
   def WosScraper.forums
@@ -84,6 +92,7 @@ module WosScraper
   def WosScraper.thread_map(post_id)
     posts = []
     page = Hpricot(open("http://www.worldofspectrum.org/forums/showthread.php?mode=hybrid&p=#{post_id}"))
+    reported_time = time_string_to_seconds((page / "span.time").last.inner_text)
     writelink_list = (page / "script").select {|e| e.inner_html =~ /writeLink/}.to_s
     writelink_list.each do |line|
       next unless line =~ /^\s*writeLink\((\d+), \d+, \d+, \d+, \"([^\"]*)\", \"(?:\\.|[^\\\"])*\", \"[^\"]*\", \"([^\"]+)\", \d+\);/
@@ -91,7 +100,9 @@ module WosScraper
       indent_code = $2
       indent = indent_code.gsub(/[A-Z]/, '1').split(/,/).inject(0){|sum, i| sum + i.to_i}
       timestamp = $3
-      posts << {:id => post_id, :indent => indent, :timestamp => timestamp}
+      seconds_ago = (reported_time - time_string_to_seconds(timestamp)) % 86400
+      time_utc = (Time.now - seconds_ago).getgm
+      posts << {:id => post_id, :indent => indent, :timestamp => time_utc}
     end
     posts
   end
