@@ -2,6 +2,7 @@
 
 require "models"
 require "wos_scraper"
+require "usenet_format"
 
 def posted_today?(crap_timestamp)
   crap_timestamp.match(/(Hours?|Minutes?) Ago$/)
@@ -94,7 +95,7 @@ for post in annotated_posts
     "Subject" => post[:subject],
     "Message-Id" => "<wos-#{post[:id]}@bbgateway.bluecanary.mine.nu>",
     "References" => post[:references].map{|id| "<wos-#{id}@bbgateway.bluecanary.mine.nu>"}.join(" ")
-  }, post[:body].to_s + post[:sig].to_s)
+  }, UsenetFormat.clean_html(post[:body])) #  + post[:sig].to_s
   article.update_attribute(:source_post, post[:id])
 end
 puts "done."
