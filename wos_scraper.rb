@@ -18,7 +18,7 @@ module WosScraper
 
   # get list of newsgroups and last post from front page
   def WosScraper.forums
-    wos_index = Hpricot(open("http://www.worldofspectrum.org/forums/index.php"))
+    wos_index = Hpricot(open_slowly("http://www.worldofspectrum.org/forums/index.php"))
     forum_list_rows = wos_index / "table:eq(1) tbody tr"
     category = nil
     forums = []
@@ -44,7 +44,7 @@ module WosScraper
   end
   
   def WosScraper.threads(forum_id, page)
-    forum_index = Hpricot(open("http://www.worldofspectrum.org/forums/forumdisplay.php?f=#{forum_id}&page=#{page}"))
+    forum_index = Hpricot(open_slowly("http://www.worldofspectrum.org/forums/forumdisplay.php?f=#{forum_id}&page=#{page}"))
     threads = []
     rows = forum_index / "table#threadslist tbody[@id *= 'threadbits_forum'] tr"
     for row in rows
@@ -63,12 +63,12 @@ module WosScraper
   end
   
   def WosScraper.post_page_from_post_id(post_id)
-    page = Hpricot(open("http://www.worldofspectrum.org/forums/showthread.php?p=#{post_id}"))
+    page = Hpricot(open_slowly("http://www.worldofspectrum.org/forums/showthread.php?p=#{post_id}"))
     post_page(page)
   end
   
   def WosScraper.post_page_from_thread_id(thread_id, page)
-    page = Hpricot(open("http://www.worldofspectrum.org/forums/showthread.php?t=#{thread_id}&page=#{page}"))
+    page = Hpricot(open_slowly("http://www.worldofspectrum.org/forums/showthread.php?t=#{thread_id}&page=#{page}"))
     post_page(page)
   end
 
@@ -91,7 +91,7 @@ module WosScraper
   
   def WosScraper.thread_map(post_id)
     posts = []
-    page = Hpricot(open("http://www.worldofspectrum.org/forums/showthread.php?mode=hybrid&p=#{post_id}"))
+    page = Hpricot(open_slowly("http://www.worldofspectrum.org/forums/showthread.php?mode=hybrid&p=#{post_id}"))
     reported_time = time_string_to_seconds((page / "span.time").last.inner_text)
     writelink_list = (page / "script").select {|e| e.inner_html =~ /writeLink/}.to_s
     writelink_list.each do |line|
@@ -105,6 +105,19 @@ module WosScraper
       posts << {:id => post_id, :indent => indent, :timestamp => time_utc}
     end
     posts
+  end
+  
+  def WosScraper.open_slowly(url)
+    @@last_request ||= nil
+    while (!@@last_request.nil? && @@last_request > Time.now - 10)
+      sleep 1
+    end
+    begin
+      response = open(url)
+    ensure
+      @@last_request = Time.now
+    end
+    response
   end
 
 end
