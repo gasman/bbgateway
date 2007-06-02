@@ -3,10 +3,7 @@
 require 'nntp_server'
 require 'optparse'
 
-nntp_options = {
-  :port => 119,
-  :host => ''
-}
+nntp_options = {}
 
 opts = OptionParser.new do |opts|
   # Cast 'delay' argument to a Float.
@@ -16,6 +13,10 @@ opts = OptionParser.new do |opts|
 
   opts.on("-h", "--host [IP]", String, "Host to bind to (default all)") do |h|
     nntp_options[:host] = h
+  end
+
+  opts.on("-l", "--log [FILE]", String, "File to write logs to") do |filename|
+    nntp_options[:log] = File.open(filename, "a")
   end
 
   opts.on_tail("-?", "--help", "Show this message") do

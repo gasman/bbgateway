@@ -8,6 +8,7 @@ class NNTPServer
   def initialize(opts)
     @port = opts[:port] || 119
     @host = opts[:host]
+    @log = opts[:log]
   end
   
   def start
@@ -25,8 +26,10 @@ class NNTPServer
         begin
           NNTPSession.new(self, s)
         rescue Exception
-          $stderr.puts "Exception: #{$!}"
-          $stderr.puts $!.backtrace
+          log "Exception: #{$!}"
+          $!.backtrace.each do |line|
+            log line
+          end
           raise
         end
       end
@@ -36,6 +39,7 @@ class NNTPServer
   
   def log(message)
     puts "*** #{message}"
+    @log.puts message unless @log.nil?
   end
   
   protected
@@ -130,7 +134,8 @@ class NNTPServer
                 # t.write "  ihave"
                 t.write "  last"
                 t.write "  list"
-                t.write "  newgroups [yy]yymmdd hhmmss [\"GMT\"]"
+                t.write "  newgroups [yy]yymmdd hhmmss [\"GMT\"|\"UTC\"]"
+                t.write "  newnews newsgroups [yy]yymmdd hhmmss [\"GMT\"|\"UTC\"]"
                 t.write "  next"
                 t.write "  over [range]"
                 # t.write "  post"
