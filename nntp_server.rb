@@ -19,22 +19,30 @@ class NNTPServer
 
     log "listening on #{addrs.collect{|a|"#{a}:#{port}"}.join(' ')}"
 
-    loop do
-      socket = server.accept
+    begin
+      loop do
+        socket = server.accept
 
-      Thread.start(socket) do |s| # one thread per client
-        begin
-          NNTPSession.new(self, s)
-        rescue Exception
-          log "Exception: #{$!}"
-          $!.backtrace.each do |line|
-            log line
+        Thread.start(socket) do |s| # one thread per client
+          begin
+            NNTPSession.new(self, s)
+          rescue Exception
+            log "Exception: #{$!}"
+            $!.backtrace.each do |line|
+              log line
+            end
+            raise
           end
-          raise
         end
       end
+    rescue Interrupt
 
     end
+  end
+  
+  def shutdown
+    log "Shutting down."
+    @log.close unless @log.nil?
   end
   
   def log(message)

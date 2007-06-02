@@ -27,4 +27,8 @@ end.parse!
 
 s = NNTPServer.new(nntp_options)
 
+Signal.trap("EXIT") do
+  s.shutdown
+end
+
 s.start
