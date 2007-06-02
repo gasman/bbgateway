@@ -1,5 +1,6 @@
 require "rubygems"
 require_gem "activerecord"
+require "ParseDate"
 
 require "database"
 
@@ -104,6 +105,11 @@ class Article < ActiveRecord::Base
     headers['Xref'] = "bluecanary.mine.nu " + article.article_placements.map{|placement| "#{placement.newsgroup.name}:#{placement.id}" }.join(" ")
     headers['Lines'] = body.split(/\n/).length
     headers['Date'] ||= Time.new
+    if headers['Date'].is_a?(Time)
+      article.article_date = headers['Date']
+    else
+      article.article_date = Time.mktime(*ParseDate.parsedate(headers['Date']))
+    end
     headers['Date'] = self.to_rfc850_date(headers['Date'])
 
     headers.each do |key, value|

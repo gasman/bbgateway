@@ -10,8 +10,10 @@ CREATE TABLE articles (
   id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
   source_post INTEGER,
   body LONGTEXT,
+  article_date DATETIME,
   
-  INDEX (source_post)
+  INDEX (source_post),
+  INDEX (article_date)
 );
 
 CREATE TABLE article_placements (
