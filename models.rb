@@ -132,6 +132,21 @@ class Article < ActiveRecord::Base
     header_lines.join("\n")
   end
   
+  def self.newnews(wildmat, date)
+    wildmat_patterns = wildmat.split(/,/)
+    group_conditions = wildmat_pattern_to_like(wildmat_patterns.shift)
+    for pattern in wildmat_patterns
+      if pattern[0..0] == '!'
+        group_conditions = "(#{group_conditions}) AND NOT #{wildmat_pattern_to_like(pattern[1..-1])}"
+      else
+        group_conditions = "(#{group_conditions}) OR #{wildmat_pattern_to_like(pattern)}"
+      end
+    end
+    
+    find(:all, :include => [{:article_placements => :newsgroup}, :headers],
+      :conditions => ["articles.article_date > ? AND (#{group_conditions})", date])
+  end
+  
   private
     def self.capitalise(str)
       str.downcase.gsub(/\b\w/) {|char| char.upcase}
@@ -139,5 +154,12 @@ class Article < ActiveRecord::Base
     
     def self.to_rfc850_date(date)
       date.is_a?(String) ? date : date.strftime("%a, %d %B %Y %H:%M:%S %z")
+    end
+    
+    def self.wildmat_pattern_to_like(wildmat)
+      pattern = wildmat
+      pattern.gsub!(/\?/, '_')
+      pattern.gsub!(/\*/, '%')
+      sanitize_sql(["newsgroups.name LIKE ?", pattern])
     end
 end

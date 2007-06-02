@@ -173,38 +173,36 @@ class NNTPServer
                   end
                 end
               end
-            when /^newgroups\s+(\d+)\s+(\d\d)(\d\d)(\d\d)(\s+gmt)?/i
-              date_part = $1
-              hour = $2.to_i
-              minute = $3.to_i
-              second = $4.to_i
-              gmt = $5
-              if date_part =~ /^(\d\d\d\d)(\d\d)(\d\d)/
-                year = $1.to_i
-                month = $2.to_i
-                day = $3.to_i
-              elsif date_part =~ /^(\d\d)(\d\d)(\d\d)/
-                year = $1.to_i
-                month = $2.to_i
-                day = $3.to_i
-                current_year = Time.now.year
-                century = current_year - (current_year % 100)
-                year += (year <= current_year % 100 ? century : century - 100)
-              else
-                send_status "501 command not recognised"
+
+            when /^newgroups\s+([\d\scgmtu]+)/i
+              date = parse_numeric_datestamp($1)
+              if date.nil?
+                send_status "500 command not recognised"
                 next
               end
 
-              if gmt
-                date = Time.gm(year, month, day, hour, minute, second)
-              else
-                date = Time.local(year, month, day, hour, minute, second)
-              end
               send_status "231 List of new newsgroups follows (multi-line)"
               new_groups = Newsgroup.find(:all, :conditions => ['created_at > ?', date])
               text_response do |t|
                 for group in new_groups
                   t.write group.name
+                end
+              end
+
+            when /^newnews\s+(\S+)\s+([\d\scgmtu]+)/i
+              wildmat = $1
+              date = parse_numeric_datestamp($2)
+              if date.nil?
+                send_status "500 command not recognised"
+                next
+              end
+              
+              articles = Article.newnews(wildmat, date)
+
+              send_status "230 list of new articles by message-id follows"
+              text_response do |t|
+                for article in articles
+                  t.write article.message_id
                 end
               end
 
@@ -307,6 +305,35 @@ class NNTPServer
           end
         when 'stat'
           send_status "223 #{placement} #{article.message_id} article retrieved - request text separately"
+        end
+      end
+      
+      def parse_numeric_datestamp(str)
+        if str =~ /^(\d\d\d\d)(\d\d)(\d\d)\s+(\d\d)(\d\d)(\d\d)/
+          year = $1.to_i
+          month = $2.to_i
+          day = $3.to_i
+          hour = $4.to_i
+          minute = $5.to_i
+          second = $6.to_i
+        elsif str =~ /^(\d\d)(\d\d)(\d\d)\s+(\d\d)(\d\d)(\d\d)/
+          year = $1.to_i
+          month = $2.to_i
+          day = $3.to_i
+          hour = $4.to_i
+          minute = $5.to_i
+          second = $6.to_i
+          current_year = Time.now.year
+          century = current_year - (current_year % 100)
+          year += (year <= current_year % 100 ? century : century - 100)
+        else
+          return nil
+        end
+
+        if str =~ /(gmt|utc)\s*$/i
+          Time.gm(year, month, day, hour, minute, second)
+        else
+          Time.local(year, month, day, hour, minute, second)
         end
       end
       
