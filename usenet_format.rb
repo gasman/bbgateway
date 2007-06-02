@@ -50,6 +50,8 @@ module UsenetFormat
           "/#{inlines_to_text(i.children, links)}/"
         elsif i.name == 'b'
           "*#{inlines_to_text(i.children, links)}*"
+        elsif i.name == 'font'
+          inlines_to_text(i.children, links)
         else
           i.to_s # output raw HTML
         end
@@ -60,7 +62,7 @@ module UsenetFormat
   end
   
   def UsenetFormat.render_inlines(inlines, quote_level, links)
-    wrap_text(inlines_to_text(inlines, links).gsub(/\s+/, ' ').strip, quote_level)
+    wrap_text(inlines_to_text(inlines, links).gsub(/\s+/, ' ').gsub(/&lt;/, '<').gsub(/&gt;/, '>').gsub(/&quot;/, "\"").gsub(/&amp;/, '&').strip, quote_level)
   end
   
   def UsenetFormat.clean_html_traverse(doc, quote_level, links)

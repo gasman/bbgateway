@@ -89,7 +89,7 @@ end
 puts "Adding to newsfeed..."
 for post in annotated_posts
   article = Article.create_from_posting({
-    "From" => "#{post[:author].gsub(/[\<\>\n\r]/, '')} <#{post[:author].gsub(/[^\w\_\-]/, '-')}@wos.invalid}>",
+    "From" => "#{post[:author].gsub(/[\<\>\n\r]/, '')} <#{post[:author].gsub(/[^\w\_\-]/, '-')}@wos.invalid>",
     "Date" => post[:date],
     "Newsgroups" => post[:forum][:name],
     "Subject" => post[:subject],
