@@ -69,6 +69,9 @@ class NNTPServer
           while line = @socket.gets # read a line at a time
             log_command(line)
             case line
+            when /^\s*$/
+              next
+              
             when /^(article|body|head|stat)\b\s*(\d*)\s*$/i
               command = $1
               article_number = $2
@@ -132,6 +135,7 @@ class NNTPServer
                 t.write "  over [range]"
                 # t.write "  post"
                 t.write "  quit"
+                t.write "  slave"
                 t.write "  stat [MessageID|Number]"
                 t.write "  xover [range]"
               end
@@ -258,6 +262,10 @@ class NNTPServer
             when /^quit\b/i
               send_status "205 closing connection - goodbye!"
               raise ClientQuitError
+
+            when /^slave\b/i
+              send_status "202 slave status noted"
+
             else
               send_status "500 command not recognized"
             end
