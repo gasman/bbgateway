@@ -47,7 +47,10 @@ class NNTPServer
   
   def log(message)
     puts "*** #{message}"
-    @log.puts message unless @log.nil?
+    unless @log.nil?
+      @log.puts message
+      @log.flush
+    end
   end
   
   protected
