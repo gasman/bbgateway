@@ -48,6 +48,8 @@ module UsenetFormat
           end
         elsif i.name == 'i'
           "/#{inlines_to_text(i.children, links)}/"
+        elsif i.name == 'b'
+          "*#{inlines_to_text(i.children, links)}*"
         else
           i.to_s # output raw HTML
         end
