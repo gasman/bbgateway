@@ -124,12 +124,13 @@ class NNTPServer
                 t.write "  group [newsgroup]"
                 t.write "  head [MessageID|Number]"
                 t.write "  help"
-                t.write "  ihave"
+                # t.write "  ihave"
                 t.write "  last"
                 t.write "  list"
                 t.write "  newgroups [yy]yymmdd hhmmss [\"GMT\"]"
                 t.write "  next"
                 t.write "  over [range]"
+                # t.write "  post"
                 t.write "  quit"
                 t.write "  stat [MessageID|Number]"
                 t.write "  xover [range]"
@@ -250,6 +251,10 @@ class NNTPServer
                   end
                 end
               end
+
+            when /^post\b/i
+              send_status "440 posting not allowed"
+
             when /^quit\b/i
               send_status "205 closing connection - goodbye!"
               raise ClientQuitError
