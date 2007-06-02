@@ -8,6 +8,8 @@ def posted_today?(crap_timestamp)
   crap_timestamp.match(/(Hours?|Minutes?) Ago$/)
 end
 
+puts "Beginning fetch of WOS forums at #{Time.now}"
+
 fresh_forums = []
 for forum in WosScraper.forums
   if (Newsgroup.find_by_name(forum[:name]))
