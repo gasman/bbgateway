@@ -128,6 +128,7 @@ class NNTPServer
                 t.write "  last"
                 t.write "  list"
                 t.write "  newgroups [yy]yymmdd hhmmss [\"GMT\"]"
+                t.write "  next"
                 t.write "  over [range]"
                 t.write "  quit"
                 t.write "  stat [MessageID|Number]"
@@ -201,6 +202,25 @@ class NNTPServer
                   t.write group.name
                 end
               end
+
+            when /^next\b/i
+              if @group.nil?
+                send_status "412 no newsgroup selected"
+                next
+              end
+              if @placement_id.nil?
+                send_status "420 no current article has been selected"
+                next
+              end
+              new_placement_id = @group.id_after(@placement_id)
+              if new_placement_id.nil?
+                send_status "421 no next article in this group"
+              else
+                @placement_id = new_placement_id
+                @article = @group.article(@placement_id)
+                send_status "223 #{@placement_id} #{@article.message_id} article retrieved - request text separately"
+              end
+
             when /^over\s+([\d\-]+)/i, /^xover\s+([\d\-]+)/i
               range = $1
               if @group.nil?
