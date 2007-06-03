@@ -123,6 +123,9 @@ class NNTPServer
               end
               send_article(command, h.article, 0)
 
+            when /^date\b/i
+              send_status "111 #{Time.now.utc.strftime("%Y%m%d%H%M%S")}"
+
             when /^group\s+(\S+)/i
               group_name = $1
               if (group = Newsgroup.find_by_name(group_name))
@@ -139,6 +142,7 @@ class NNTPServer
                 t.write "Commands recognised:"
                 t.write "  article [MessageID|Number]"
                 t.write "  body [MessageID|Number]"
+                t.write "  date"
                 t.write "  group [newsgroup]"
                 t.write "  head [MessageID|Number]"
                 t.write "  help"
@@ -279,7 +283,7 @@ class NNTPServer
 
             when /^slave\b/i
               send_status "202 slave status noted"
-
+              
             else
               send_status "500 command not recognized"
             end
