@@ -61,8 +61,12 @@ module UsenetFormat
     }.join
   end
   
+  def UsenetFormat.expand_entities(str)
+    str.gsub(/\s+/, ' ').gsub(/&lt;/, '<').gsub(/&gt;/, '>').gsub(/&quot;/, "\"").gsub(/&amp;/, '&')
+  end
+  
   def UsenetFormat.render_inlines(inlines, quote_level, links)
-    wrap_text(inlines_to_text(inlines, links).gsub(/\s+/, ' ').gsub(/&lt;/, '<').gsub(/&gt;/, '>').gsub(/&quot;/, "\"").gsub(/&amp;/, '&').strip, quote_level)
+    wrap_text(expand_entities(inlines_to_text(inlines, links)).strip, quote_level)
   end
   
   def UsenetFormat.clean_html_traverse(doc, quote_level, links)
@@ -110,7 +114,7 @@ module UsenetFormat
     unless links.empty?
       txt += "\n"
       links.each_with_index do |url, i|
-        txt += "[#{i}] #{url}\n"
+        txt += "[#{i}] #{expand_entities(url)}\n"
       end
     end
     txt
