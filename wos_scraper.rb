@@ -91,10 +91,11 @@ module WosScraper
   
   def WosScraper.thread_map(post_id)
     posts = []
-    page = Hpricot(open_slowly("http://www.worldofspectrum.org/forums/showthread.php?mode=hybrid&p=#{post_id}"))
+    html_stream = open_slowly("http://www.worldofspectrum.org/forums/showthread.php?mode=hybrid&p=#{post_id}")
+    html = html_stream.read
+    page = Hpricot(html)
     reported_time = time_string_to_seconds((page / "span.time").last.inner_text)
-    writelink_list = (page / "script").select {|e| e.inner_html =~ /writeLink/}.to_s
-    writelink_list.each do |line|
+    html.each do |line|
       next unless line =~ /^\s*writeLink\((\d+), \d+, \d+, \d+, \"([^\"]*)\", \"(?:\\.|[^\\\"])*\", \"[^\"]*\", \"([^\"]+)\", \d+\);/
       post_id = $1.to_i
       indent_code = $2

@@ -9,17 +9,20 @@ def posted_today?(crap_timestamp)
 end
 
 puts "Beginning fetch of WOS forums at #{Time.now}"
+STDOUT.flush
 
 fresh_forums = []
 for forum in WosScraper.forums
   if (Newsgroup.find_by_name(forum[:name]))
     if !Article.find_by_source_post(forum[:last_post_id])
       puts "New posts found in forum #{forum[:name]}"
+      STDOUT.flush
       fresh_forums << forum
     end
   else
     Newsgroup.create(:name => forum[:name])
     puts "Created newsgroup #{forum[:name]}"
+    STDOUT.flush
     fresh_forums << forum
   end
 end
@@ -33,12 +36,15 @@ for forum in fresh_forums
     for thread in threads
       if (!Article.find_by_source_post(thread[:last_post_id])) and posted_today?(thread[:last_post_timestamp])
         puts "New posts found in thread '#{thread[:title]}'"
+        STDOUT.flush
         thread[:forum] = forum
         fresh_threads << thread
       elsif thread[:sticky]
         puts "Ignoring sticky thread '#{thread[:title]}'"
+        STDOUT.flush
       else
         puts "Encountered stale thread '#{thread[:title]}' - finished with #{forum[:name]}"
+        STDOUT.flush
         seen_all_new_threads = true
         break
       end
@@ -54,6 +60,7 @@ for thread in fresh_threads
   seen_all_new_posts = false
   while true
     puts "Looking for new posts on page #{page_number} of thread '#{thread[:title]}'"
+    STDOUT.flush
     for post in post_page[:posts]
       if (!Article.find_by_source_post(post[:id])) and posted_today?(post[:crap_timestamp])
         post[:forum] = thread[:forum]
@@ -70,11 +77,13 @@ for thread in fresh_threads
 end
 
 puts "Found #{new_posts.size} new posts. Annotating..."
+STDOUT.flush
 
 annotated_posts = []
 until new_posts.empty?
   post_id = new_posts.keys.first
   puts "Deriving annotations from post #{post_id}"
+  STDOUT.flush
   tmap = WosScraper.thread_map(post_id)
   indent_map = []
   for annotation in tmap
@@ -83,12 +92,14 @@ until new_posts.empty?
     post[:references] = indent_map[(0...annotation[:indent])].map{|a| a[:id]}
     post[:date] = annotation[:timestamp]
     puts "post #{post[:id]} posted at #{annotation[:timestamp]}, references: #{post[:references].join(' ')}"
+    STDOUT.flush
     annotated_posts << new_posts.delete(post[:id])
   end
   puts
 end
 
 puts "Adding to newsfeed..."
+STDOUT.flush
 for post in annotated_posts
   article = Article.create_from_posting({
     "From" => "#{post[:author].gsub(/[\<\>\n\r]/, '')} <#{post[:author].gsub(/[^\w\_\-]/, '-')}@wos.invalid>",
