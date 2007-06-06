@@ -293,6 +293,7 @@ class NNTPServer
           log "#{@name}:#{@port} disconnected"
 
         ensure
+          ActiveRecord::Base.connection.disconnect!
           @socket.close # close socket on error
         end
 
