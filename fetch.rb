@@ -105,7 +105,7 @@ for post in annotated_posts
     "From" => "#{post[:author].gsub(/[\<\>\n\r]/, '')} <#{post[:author].gsub(/[^\w\_\-]/, '-')}@wos.invalid>",
     "Date" => post[:date],
     "Newsgroups" => post[:forum][:name],
-    "Subject" => post[:subject],
+    "Subject" => UsenetFormat. expand_entities(post[:subject]),
     "Message-Id" => "<wos-#{post[:id]}@bbgateway.bluecanary.mine.nu>",
     "References" => post[:references].map{|id| "<wos-#{id}@bbgateway.bluecanary.mine.nu>"}.join(" ")
   }, UsenetFormat.clean_html(post[:body])) #  + post[:sig].to_s
