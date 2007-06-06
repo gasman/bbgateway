@@ -87,9 +87,9 @@ module UsenetFormat
             divs = node / "/table/tr/td/div"
             if divs.size == 2
               text += "#{(divs[0] % 'strong').inner_text} wrote:\n"
-              text += clean_html_traverse(divs[1], quote_level + 1, links)
+              text += clean_html_traverse(divs[1], quote_level + 1, links) + "\n"
             else
-              text += clean_html_traverse(node % "/table/tr/td", quote_level + 1, links)
+              text += clean_html_traverse(node % "/table/tr/td", quote_level + 1, links) + "\n"
             end
           else
             text += clean_html_traverse(node, quote_level, links)
