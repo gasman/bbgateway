@@ -154,6 +154,7 @@ class NNTPServer
                 # t.write "  ihave"
                 t.write "  last"
                 t.write "  list"
+                t.write "  mode reader"
                 t.write "  newgroups [yy]yymmdd hhmmss [\"GMT\"|\"UTC\"]"
                 t.write "  newnews newsgroups [yy]yymmdd hhmmss [\"GMT\"|\"UTC\"]"
                 t.write "  next"
@@ -198,6 +199,9 @@ class NNTPServer
                   end
                 end
               end
+              
+            when /^mode\s+reader\b/i
+              send_status "201 Posting prohibited"
 
             when /^newgroups\s+([\d\scgmtu]+)/i
               date = parse_numeric_datestamp($1)
