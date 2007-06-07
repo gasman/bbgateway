@@ -130,7 +130,12 @@ class NNTPServer
               group_name = $1
               if (group = Newsgroup.find_by_name(group_name))
                 @group = group
-                send_status "211 #{@group.article_count} #{@group.first_id} #{@group.last_id} #{@group.name} group selected"
+                if @group.article_count > 0
+                  send_status "211 #{@group.article_count} #{@group.first_id} #{@group.last_id} #{@group.name} group selected"
+                else
+                  # put last_id < first_id to indicate an empty group
+                  send_status "211 0 2 1 #{@group.name} group selected"
+                end
               else
                 send_status "411 no such news group"
               end
