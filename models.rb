@@ -9,7 +9,9 @@ class Newsgroup < ActiveRecord::Base
   has_many :articles, :through => :article_placements
   
   def article(placement_id)
-    article_placements.find_by_placement_id(placement_id, :include => {:article => :headers}).article
+    placement = article_placements.find_by_placement_id(placement_id, :include => {:article => :headers})
+    return nil if placement.nil?
+    placement.article
   end
   
   def first_id
