@@ -1,0 +1,44 @@
+Operations we need to perform on the groups collection:
+
+(for RFC977)
+* LIST: listing them all, with first_id and last_id
+* NEWGROUPS: listing all groups created since 'date' (optionally filtered by name prefix)
+* GROUP: returning first_id, last_id and (estimated) count for an individual group
+* LAST/NEXT: need to traverse the list of articles. Probably want to keep an index as well as a pointer to current article, then.
+* NEWNEWS: listing message IDs of articles created since 'date', filtered by stupid overengineered wildcard scheme on name
+
+* ARTICLE/BODY/HEAD/STAT: fetching by either in-group ID or message-id
+and returning body / headers including the required ones...
+required headers are:
+	Relay-Version, - obsolete
+	Posting-Version, - obsolete
+	From, - get Article model to provide this
+	Date, - get Article model to provide this as a Time, BUT also need to search on this
+	Newsgroups, - need to consider cross-posts. Perhaps auto-generate but allow Article model to override
+	Subject, - get Article model to provide this
+	Message-ID, - used in protocol, perhaps auto-generate but allow Article model to override
+	Path - fake this, end it with !not-for-mail
+
+ignore for now:
+* IHAVE
+* POST
+
+Proposed interface:
+
+Datasource: responds to:
+	groups (enumerable) - can factor this into groups_by_date_and_name_prefix
+	group_by_name
+	groups_by_date_and_name_prefix
+	article_by_message_id
+	articles_by_date_and_group_names (stupid group wildcards in play here)
+Group: responds to:
+	name (or to_s perhaps?),
+	created_at,
+	first_id,
+	last_id,
+	article_count (optional - can use last_id - first_id + 1 as a fallback)
+	article_by_id (numeric index, not message-id)
+Article: responds to:
+	message_id
+	body
+	headers (probably just put the onus on the Article model to do everything consistently re dates, groups and message-ids for now)

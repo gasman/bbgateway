@@ -1,0 +1,5 @@
+Processing times:
+(hh:mm pp)
+seconds_past_midnight = (hh % 12) * 3600 + mm * 60 + (pp == 'AM' ? 0 : 43200)
+seconds_difference(first, second) = (second - first) % 86400
+to GMT: (Time.now - seconds_difference(post_time, reported_current_time)).getgm

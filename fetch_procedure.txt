@@ -1,0 +1,19 @@
+* Fetch http://www.worldofspectrum.org/forums/
+* Compile list of groups to fetch:
+	* if group not found on newsserver, create it. Then:
+	* if last post in that group is already fetched, skip it
+	* else, add it to the groups-to-fetch list
+* For each group on the to-fetch list:
+	* Compile list of threads to fetch:
+		* Fetch http://www.worldofspectrum.org/forums/forumdisplay.php?f=FORUM&page=1
+		* Add threads to the list where they have unseen posts, and match /Minutes? Ago/ or /Hours? Ago/
+		* If we encounter a NON-STICKY thread with only seen posts, or >1 day old, stop.
+		* If we reach the end of the page, fetch /forums/forumdisplay.php?f=FORUM&page=2 and so on.
+* For each thread on the to-fetch list:
+	* Compile list of posts to fetch:
+		* Fetch http://www.worldofspectrum.org/forums/showthread.php?p=POST&mode=linear , where POST is the displayed last-in-thread post ID
+		* Add all unseen posts. If no already-seen posts are encountered, and a '<' link exists, follow it and repeat.
+		* This will give inaccurate times (which we ignore) and no threading.
+* While there are undated posts on our list:
+	* Fetch http://www.worldofspectrum.org/forums/showthread.php?mode=hybrid&p=POST, where POST is the first undated post on the list
+	* Walk down the thread tree, keeping track of most recently seen post at each level. When we find one on our list, add that info

@@ -1,0 +1,22 @@
+postid, isnew, attachment, userid, imgString, title, datestring, timestring, doshowpost
+
+writeLink(186039, 0, 0, 813, "", "Vote for the change of TZX...", "4 Weeks Ago", "10:28 AM", 1);
+  writeLink(186044, 0, 0, 38, "L", "<i>1) Voting is evil...</i>", "4 Weeks Ago", "10:41 AM", 1);
+    writeLink(186049, 0, 0, 3467, "1,L", "<i>I choose the latter option if...</i>", "4 Weeks Ago", "11:03 AM", 1);
+      writeLink(186065, 0, 0, 61, "2,L", "<i>How about a compromise ? ...</i>", "4 Weeks Ago", "11:32 AM", 1);
+        writeLink(186097, 0, 0, 38, "3,T", "<i>So I have to implement yet...</i>", "4 Weeks Ago", "12:42 PM", 1);
+          writeLink(186100, 0, 0, 0, "3,I,L", "", "more", "", 1);
+        writeLink(186101, 0, 0, 65, "3,L", "TZX-format", "4 Weeks Ago", "12:47 PM", 1);
+          writeLink(186103, 0, 0, 0, "4,L", "", "more", "", 1);
+
+
+writeLink(186039, 0, 0, , "", "Vote for the change of TZX...", "4 Weeks Ago", "10:28 AM", 1);
+writeLink(186044, 0, 0, , "L", "<i>1) Voting is evil...</i>", "4 Weeks Ago", "10:41 AM", 1);
+writeLink(186049, 0, 0, , " L", "<i>I choose the latter option if...</i>", "4 Weeks Ago", "11:03 AM", 1);
+writeLink(186065, 0, 0, , "  L", "<i>How about a compromise ? ...</i>", "4 Weeks Ago", "11:32 AM", 1);
+writeLink(186097, 0, 0, , "   T", "<i>So I have to implement yet...</i>", "4 Weeks Ago", "12:42 PM", 1);
+writeLink(186100, 0, 0, , "   IL", "", "more", "", 1);
+writeLink(186101, 0, 0, , "   L", "TZX-format", "4 Weeks Ago", "12:47 PM", 1);
+writeLink(186103, 0, 0, , "    L", "", "more", "", 1);
+
+Sum of items in imgString (counting letters as 1) = depth of message. We can keep an array of 'most recently seen post at depth N' which will be the references field as we move down
