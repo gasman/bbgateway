@@ -16,7 +16,7 @@ end
 module ForumScraper
   module VBulletin
     Category = Struct.new(:id, :name, :forums)
-    Forum = Struct.new(:id, :name)
+    Forum = Struct.new(:id, :name, :last_post_id)
     
     class Site
     
@@ -71,7 +71,15 @@ module ForumScraper
           for forum_html in forums_html
             forum_title = (forum_html / :td)[1] % 'a[@href*="forumdisplay"]'
             forum_id = QueryString::parse(URI.parse(forum_title['href']).query)['f']
-            cat.forums << Forum.new(forum_id, forum_title.inner_text)
+            last_post_info = (forum_html / :td)[2] % 'div.smallfont'
+            if (last_post_info % :table)
+              # for a minority of sites (eg http://www.hardforum.com/), last post link is embedded in another table
+              last_post_link = (last_post_info / 'table td.smallfont')[1] % 'a[@href*="showthread"]'
+            else
+              last_post_link = (last_post_info / 'div')[2] % 'a[@href*="showthread"]'
+            end
+            last_post_id = QueryString::parse(URI.parse(last_post_link['href']).query)['p']
+            cat.forums << Forum.new(forum_id, forum_title.inner_text, last_post_id)
           end
         end
         categories
