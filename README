@@ -1,0 +1,20 @@
+Setting up a bbgateway installation
+-----------------------------------
+* Create a mysql database (or use some other database engine - although
+that's untested...) with the schema given in newsgroups-extended.sql
+* Edit database.rb to point to that database
+* Run the NNTP server, nntp.rb; use nntp.rb -? for options. To run on a port
+number under 1024 (including the default port, 119) you'll need to be root.
+As this needs to run continuously, it probably makes sense to run this in a
+'screen' session.
+* At this point, you should be able to connect to your news server through
+your favourite news reading client, but it'll be rather empty.
+* Run fetch.rb periodically. This will fetch any new articles posted in the
+last day to the www.worldofspectrum.org forums and add them to the news feed.
+* Rewrite fetch.rb as appropriate for your desired web forum. Yes, that's
+right, I'm hoping people won't just run thousands of scrapers for World Of
+Spectrum here... Generic VBulletin forum support is coming Real Soon Now -
+support for other forums such as PHPBB will probably come Vaguely Soon Now.
+
+contact: Matt Westcott - matt@west.co.tt - http://matt.west.co.tt/
+2007-06-29
