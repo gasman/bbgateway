@@ -1,6 +1,7 @@
 require "rubygems"
 require "open-uri"
 require "hpricot"
+require "parsedate"
 
 module QueryString
   def QueryString.parse(qs)
@@ -25,11 +26,15 @@ module ForumScraper
       attr_accessor :base_url
       # Number of seconds to wait between fetches (default 10)
       attr_accessor :fetch_delay
+      # A 3-element array such as [:month, :day, :year] indicating
+      # how to interpret dates given as 00-00-00 or 00-00-0000
+      attr_accessor :date_order
     
       # Creates a new object representing the vBulletin installation at base_url
       def initialize(base_url)
         @base_url = base_url
         @fetch_delay = 10
+        @date_order = [:month, :day, :year]
       end
       
       # The URL to the main index page
@@ -90,7 +95,7 @@ module ForumScraper
             end
             forum_id = QueryString::parse(URI.parse(forum_title['href']).query)['f']
 						last_post_info = (forum_html / :td)[2] % 'div.smallfont'
-            last_post_id, last_post_date = parse_last_post_info(last_post_info)
+            last_post_id, last_post_date = parse_last_post_info(last_post_info, timeframe)
             cat.forums << Forum.new(forum_id, forum_title.inner_text, last_post_id, last_post_date)
           end
         end
@@ -152,7 +157,7 @@ module ForumScraper
           end
           forum_id = QueryString::parse(URI.parse(forum_title['href']).query)['f']          
           last_post_info = (subforum_row / 'tr/td')[1] % 'div.smallfont'
-          last_post_id, last_post_date = parse_last_post_info(last_post_info)
+          last_post_id, last_post_date = parse_last_post_info(last_post_info, timeframe)
           subforums << Forum.new(forum_id, forum_title.inner_text, last_post_id, last_post_date)
         end
         threads = []
@@ -160,7 +165,7 @@ module ForumScraper
           thread_title = thread_row % 'td[@id^="td_threadtitle_"] a[@href*="showthread"]'
           thread_id = QueryString::parse(URI.parse(thread_title['href']).query)['t']
           last_post_subblock = thread_row % 'td[@title^="Replies:"]/div.smallfont'
-          last_post_id, last_post_date = parse_last_post_subblock(last_post_subblock)
+          last_post_id, last_post_date = parse_last_post_subblock(last_post_subblock, timeframe)
           threads << Thread.new(thread_id, thread_title.inner_text, last_post_id, last_post_date)
         end
         [subforums, threads]
@@ -190,7 +195,7 @@ module ForumScraper
       
       # Parse the Hpricot-ified div.smallfont element containing information about the last post in a forum,
       # and return the ID and date of that last post
-      def parse_last_post_info(last_post_info)
+      def parse_last_post_info(last_post_info, timeframe)
         return nil if last_post_info.nil?
         if (last_post_info % :table)
           # for a minority of sites (eg http://www.hardforum.com/), last post link is embedded in another table
@@ -198,15 +203,21 @@ module ForumScraper
         else
           last_post_subblock = (last_post_info / 'div')[2]
         end
-        parse_last_post_subblock(last_post_subblock)
+        parse_last_post_subblock(last_post_subblock, timeframe)
       end
       
       # Parse the Hpricot-ified inner div/td containing the date and last post link,
       # and return the ID and date of that last post
-      def parse_last_post_subblock(last_post_subblock)
+      def parse_last_post_subblock(last_post_subblock, timeframe)
         last_post_link = last_post_subblock % 'a[@href*="showthread"]'
         last_post_time = last_post_subblock % 'span.time'
-        last_post_date = (last_post_time.previous_node.inner_text + last_post_time.inner_text).strip
+        if last_post_time.nil?
+          # there may not be a span.time element, if the board uses 'X days ago' timestamps,
+          # in which case we'll take the first node in the subblock
+          last_post_date = timeframe.parse(last_post_subblock.children[0].inner_text.strip, @date_order)
+        else
+          last_post_date = timeframe.parse((last_post_time.previous_node.inner_text + last_post_time.inner_text).strip, @date_order)
+        end
         [QueryString::parse(URI.parse(last_post_link['href']).query)['p'], last_post_date]
       end
       
@@ -234,6 +245,66 @@ module ForumScraper
       def to_s
         @server_time.strftime("%Y-%m-%d %H:%M")
       end
+      
+      def parse(str, date_order = [:month, :day, :year])
+        if str =~ /Today,? (\d\d):(\d\d) (AM|PM)/
+          local_time = Time.gm(@server_time.year, @server_time.month, @server_time.day, ($1.to_i % 12) + ($3 == 'AM' ? 0 : 12), $2.to_i)
+        elsif str =~ /Yesterday,? (\d\d):(\d\d) (AM|PM)/
+          yesterday = @server_time - 24*3600
+          local_time = Time.gm(yesterday.year, yesterday.month, yesterday.day, ($1.to_i % 12) + ($3 == 'AM' ? 0 : 12), $2.to_i)
+        elsif str =~ /(\d+)-(\d+)-(\d+),? (\d\d):(\d\d) (AM|PM)/
+          date_parts = date_parts_from_numeric([$1, $2, $3], date_order)
+          local_time = Time.gm(date_parts[:year], date_parts[:month], date_parts[:day], ($4.to_i % 12) + ($6 == 'AM' ? 0 : 12), $5.to_i)
+        elsif str =~ /(\d+)-(\d+)-(\d+)/
+          date_parts = date_parts_from_numeric([$1, $2, $3], date_order)
+          local_time = Time.gm(date_parts[:year], date_parts[:month], date_parts[:day], 12, 0, 0)
+        elsif str =~ /(\d+) (second|minute|hour)s? ago,? (\d\d):(\d\d) (AM|PM)/i
+          # ignore the 'ago' bit and just place the given time into the past 24 hours
+          local_time = Time.gm(@server_time.year, @server_time.month, @server_time.day, ($3.to_i % 12) + ($5 == 'AM' ? 0 : 12), $4.to_i)
+          local_time -= 24*3600 if local_time > @server_time
+        elsif str =~ /(\d+) seconds? ago/i
+          local_time = @server_time - ($1.to_i)
+        elsif str =~ /(\d+) minutes? ago/i
+          local_time = @server_time - ($1.to_i)*60
+        elsif str =~ /(\d+) hours? ago/i
+          local_time = @server_time - ($1.to_i)*3600
+        elsif str =~ /(\d+) days? ago/i
+          # This will also catch "2 Days Ago, 12:34 PM". It's not worth the trouble of figuring out how
+          # to deal with off-by-one errors for such stupid timestamps, so we'll just ignore the time. So there.
+          local_time = @server_time - ($1.to_i)*3600*24
+        elsif str =~ /(\d+) weeks? ago/i
+          # Likewise. "2 Weeks Ago, 12:34 PM"? Oh, please.
+          local_time = @server_time - ($1.to_i)*3600*24*7
+        else
+          # if we don't recognise the format, sling it into ParseDate and hope for the best
+          time_info = ParseDate.parsedate(str)
+          if time_info.any?
+            local_time = Time.gm(*time_info)
+          else
+            raise TypeError, "Could not make sense of date: #{str}"
+          end
+        end
+        # return as GMT
+        local_time -= @timezone * 3600
+      end
+      
+      private
+        # Convert an array of three date elements (day, month, year) in the order specified by date_order
+        # into a date_parts struct with :day, :month, :year keys with year expanded to 4 digits
+        def date_parts_from_numeric(original_date_parts, date_order)
+          date_parts = {}
+          original_date_parts.each_with_index do |s, i|
+            date_parts[date_order[i]] = s.to_i
+          end
+          if date_parts[:year] < 100
+            # extend two-digit year to belong in this century, or if that would result in a year in the future,
+            # last century
+            current_year = @server_time.year
+            century = current_year - (current_year % 100)
+            date_parts[:year] += (date_parts[:year] <= current_year % 100 ? century : century - 100)
+          end
+          date_parts
+        end
     end
   end
 end
