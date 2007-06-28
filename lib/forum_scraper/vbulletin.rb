@@ -103,16 +103,16 @@ module ForumScraper
       end
       
       # Returns the URL to the index page of the forum with id forum_id
-      def forum_index_url(forum_id)
-        "#{@base_url}forumdisplay.php?f=#{forum_id}"
+      def forum_index_url(forum_id, page = 1)
+        "#{@base_url}forumdisplay.php?f=#{forum_id}&page=#{page}"
       end
       
       # Returns two strings containing the HTML of the subforum listing and thread listing for the given forum index page
-      def forum_index_parts(forum_id)
+      def forum_index_parts(forum_id, page = 1)
         subforum_list = ""
         thread_list = ""
         timeframe = nil
-        open_slowly(forum_index_url(forum_id)) do |f|
+        open_slowly(forum_index_url(forum_id, page)) do |f|
           until f.eof? do
             line = f.readline
             if line =~ /^<div class=\"smallfont\" align=\"center\">All times are GMT([\+\-\d\s]*)\. The time now is <span class=\"time\">(\d\d):(\d\d) (AM|PM)<\/span>\.<\/div>/
@@ -140,8 +140,8 @@ module ForumScraper
         [subforum_list, thread_list, timeframe]
       end
       
-      def forum_index_objects(forum_id)
-        subforums_raw_html, threads_raw_html, timeframe = forum_index_parts(forum_id)
+      def forum_index_objects(forum_id, page = 1)
+        subforums_raw_html, threads_raw_html, timeframe = forum_index_parts(forum_id, page)
         subforums_html = Hpricot(subforums_raw_html)
         threads_html = Hpricot(threads_raw_html)
         subforum_rows = subforums_html / :tbody
