@@ -34,8 +34,8 @@ module WosScraper
           newsgroup_name = "wos.#{category}.#{ng_leaf_name}"
         end
         last_post_href = (row % "td:eq(2) a[img[@src *= 'lastpost']]")['href']
-        last_post_id = last_post_href.match(/&amp;p=(\d+)/)[1].to_i
-        forum_id = (row % "a[strong]")['href'].match(/&amp;f=(\d+)/)[1].to_i
+        last_post_id = last_post_href.match(/&p=(\d+)/)[1].to_i
+        forum_id = (row % "a[strong]")['href'].match(/&f=(\d+)/)[1].to_i
         forums << {:name => newsgroup_name, :forum_id => forum_id, :last_post_id => last_post_id}
       end
     end
@@ -51,8 +51,10 @@ module WosScraper
       title_link = row % "a[@id *= 'thread_title_']"
       thread_id = title_link['id'].match(/^thread_title_(\d+)$/)[1].to_i
       title = title_link.inner_text
-      last_post_href = (row % "a[img[@src *= 'lastpost']]")['href']
-      last_post_id = last_post_href.match(/&amp;p=(\d+)/)[1].to_i
+      last_post_link = row % "a[img[@src *= 'lastpost']]"
+      next if last_post_link.nil? # skip over moved threads, which have a blank cell here
+      last_post_href = last_post_link['href']
+      last_post_id = last_post_href.match(/&p=(\d+)/)[1].to_i
       last_post_timestamp = (row % "td:eq(3) div > *").to_s.strip
       is_sticky = (row % "img[@src *= 'sticky']") ? true : false
       threads << {:title => title, :id => thread_id,
