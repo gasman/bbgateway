@@ -1,6 +1,6 @@
 require "rubygems"
 require "active_record"
-require "ParseDate"
+require "parsedate"
 
 require "database"
 
