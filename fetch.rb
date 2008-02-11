@@ -34,7 +34,7 @@ for forum in fresh_forums
   begin
     threads = WosScraper.threads(forum[:forum_id], page)
     for thread in threads
-      if (!Article.find_by_source_post(thread[:last_post_id])) and posted_today?(thread[:last_post_timestamp])
+      if (!Article.find_by_source_post(thread[:last_post_id])) and posted_today?(thread[:last_post_timestamp]) and !fresh_threads.any?{|old_thread| old_thread[:id] == thread[:id] }
         puts "New posts found in thread '#{thread[:title]}'"
         STDOUT.flush
         thread[:forum] = forum
@@ -42,6 +42,11 @@ for forum in fresh_forums
       elsif thread[:sticky]
         puts "Ignoring sticky thread '#{thread[:title]}'"
         STDOUT.flush
+      elsif fresh_threads.any?{|old_thread| old_thread[:id] == thread[:id] }
+        puts "Re-encountered thread '#{thread[:title]}' from previous page - finished with #{forum[:name]}"
+        STDOUT.flush
+        seen_all_new_threads = true
+        break
       else
         puts "Encountered stale thread '#{thread[:title]}' - finished with #{forum[:name]}"
         STDOUT.flush
