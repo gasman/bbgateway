@@ -19,7 +19,7 @@ module WosScraper
   # get list of newsgroups and last post from front page
   def WosScraper.forums
     wos_index = Hpricot(open_slowly("http://www.worldofspectrum.org/forums/index.php"))
-    forum_list_rows = wos_index / "table:eq(1) tbody tr"
+    forum_list_rows = wos_index / "table:eq(3) tbody tr"
     category = nil
     forums = []
     for row in forum_list_rows

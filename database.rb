@@ -4,5 +4,6 @@ ActiveRecord::Base.establish_connection(
 	:host => "localhost",
 	:username => "root",
 	:password => "",
-	:database => "bbgateway"
+	:database => "bbgateway",
+	:socket => "/var/run/mysqld/mysqld.sock"
 )

@@ -89,7 +89,13 @@ until new_posts.empty?
   post_id = new_posts.keys.first
   puts "Deriving annotations from post #{post_id}"
   STDOUT.flush
-  tmap = WosScraper.thread_map(post_id)
+  begin
+    tmap = WosScraper.thread_map(post_id)
+  rescue EOFError # in case the thread is just too deep for vbulletin to cope
+    puts "Failed to get thread map for post #{post_id}; faking the data instead"
+    STDOUT.flush
+    tmap = [{:id => post_id, :indent => 0, :timestamp => Time.now.getgm}]
+  end
   indent_map = []
   for annotation in tmap
     indent_map[annotation[:indent]] = annotation
