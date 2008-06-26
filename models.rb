@@ -155,7 +155,7 @@ class Article < ActiveRecord::Base
     end
     
     def self.to_rfc850_date(date)
-      date.is_a?(String) ? date : date.strftime("%a, %d %B %Y %H:%M:%S %z")
+      date.is_a?(String) ? date : date.strftime("%a, %d %b %Y %H:%M:%S %z")
     end
     
     def self.wildmat_pattern_to_like(wildmat)
