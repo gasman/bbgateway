@@ -2,6 +2,7 @@
 
 require 'nntp_server'
 require 'optparse'
+require 'daemons'
 
 nntp_options = {}
 
@@ -25,10 +26,12 @@ opts = OptionParser.new do |opts|
   end
 end.parse!
 
-s = NNTPServer.new(nntp_options)
+Daemons.run_proc('bbgateway-nntp') do
+  s = NNTPServer.new(nntp_options)
 
-Signal.trap("EXIT") do
-  s.shutdown
+  Signal.trap("EXIT") do
+    s.shutdown
+  end
+
+  s.start
 end
-
-s.start
