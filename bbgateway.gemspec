@@ -1,6 +1,6 @@
 spec = Gem::Specification.new do |s|
 	s.name = 'bbgateway'
-	s.version = '0.0.1'
+	s.version = '0.0.2'
 	s.summary = 'Web bulletin board to NNTP gateway'
 	s.description = 'Utilities for scraping content from web-based bulletin boards and providing it via NNTP'
 	s.add_dependency('activerecord', '>= 1.15.5')
