@@ -98,6 +98,8 @@ module WosScraper
     page = Hpricot(html)
     reported_time = time_string_to_seconds((page / "span.time").last.inner_text)
     html.each do |line|
+      line.gsub!('" + "', '') # undo vbulletin's strange escaping of "--" into "-" + "-"
+       # - http://www.worldofspectrum.org/forums/showthread.php?mode=hybrid&t=25365
       next unless line =~ /^\s*writeLink\((\d+), \d+, \d+, \d+, \"([^\"]*)\", \"(?:\\.|[^\\\"])*\", \"[^\"]*\", \"([^\"]+)\", \d+\);/
       post_id = $1.to_i
       indent_code = $2
