@@ -91,7 +91,7 @@ until new_posts.empty?
   STDOUT.flush
   begin
     tmap = WosScraper.thread_map(post_id)
-  rescue EOFError # in case the thread is just too deep for vbulletin to cope
+  rescue EOFError,OpenURI::HTTPError # in case the thread is just too deep for vbulletin to cope
     puts "Failed to get thread map for post #{post_id}; faking the data instead"
     STDOUT.flush
     tmap = [{:id => post_id, :indent => 0, :timestamp => Time.now.getgm}]
